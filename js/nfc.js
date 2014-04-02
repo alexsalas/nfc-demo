@@ -74,12 +74,12 @@ function send_file(peer) {
     var records = new Array();
 
     var appStorage = navigator.getDeviceStorage('apps');
-    //file1 = appStorage.get("local/webapps/webapps.json");
-    //var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
+    file1 = appStorage.get("local/webapps/webapps.json");
+    var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
 
     var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
     records.push(ndef);
-    //records.push(file);
+    records.push(file);
 
     var req = nfcPeer.sendNDEF(records);
     req.onsuccess = (function() {
@@ -90,33 +90,13 @@ function send_file(peer) {
     });
 }
 
-window.onload = function onload() {
-    window.navigator.mozSetMessageHandler('activity', NfcActivityHandler);
+window.navigator.mozSetMessageHandler('activity', NfcActivityHandler);
 
-    window.navigator.mozNfc.onpeerready = function(event) {
-        var nfcdom = window.navigator.mozNfc;
-        var nfcPeer = nfcdom.getNFCPeer(event.detail);
+window.navigator.mozNfc.onpeerready = function(event) {
+    updateText('New Device Found!');
 
-        updateText('New Device Found!');
+    var nfcdom = window.navigator.mozNfc;
+    var nfcPeer = nfcdom.getNFCPeer(event.detail);
 
-        //send_file(nfcPeer);
-
-        var records = new Array();
-
-        var appStorage = navigator.getDeviceStorage('apps');
-        //file1 = appStorage.get("local/webapps/webapps.json");
-        //var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
-
-        var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
-        records.push(ndef);
-        //records.push(file);
-
-        var req = nfcPeer.sendNDEF(records);
-        req.onsuccess = (function() {
-            updateText('Sent file successfully');
-        });
-        req.onerror = (function() {
-            updateText('Unable to send file');
-        });
-    };
-}
+    send_file(nfcPeer);
+};
