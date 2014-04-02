@@ -567,10 +567,17 @@ window.onload = function onload() {
     debug('In onpeerready handler' + JSON.stringify(event.detail));
     var nfcdom = window.navigator.mozNfc;
     var nfcPeer = nfcdom.getNFCPeer(event.detail);
-    var records = new Array();
-    var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
+    var records = new Array(); 
+    
+	var appStorage = navigator.getDeviceStorage('apps');
+    file1 = appStorage.get("local/webapps/webapps.json"); 
+	var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
+	
+	var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
     records.push(ndef);
-    var req = nfcPeer.sendNDEF(records);
+    records.push(file); 
+`
+	var req = nfcPeer.sendNDEF(records);
     req.onsuccess = (function() {
       debug('SEND NDEF successfully');
     });
