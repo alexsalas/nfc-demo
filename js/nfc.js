@@ -2,15 +2,54 @@ function updateText(text) {
     $('#new_devices').append('<p>' + text + '</p>');
 }
 
+function handleNdefDiscovered(activityData) {
+    var nfcdom = window.navigator.mozNfc;
+    var nfcTag = nfcdom.getNFCTag(activityData.sessionToken);
+    nfcUI.nfcTag = nfcTag;
+    if (!nfcTag) {
+        updateText("Error: handleNdefDiscovered: can't get NFC Tag session for operations.");
+        return false;
+    }
+
+    switch (activityData.tech) {
+        case 'P2P':
+            // Process existing message.
+            return handleNdefDiscoveredMessages(activityData.records);
+            break;
+        case 'NDEF':
+            // Fall through
+        case 'NDEF_FORMATTABLE':
+            if (activityData.records === null) {
+                // Process unread message.
+                return handleNdefType(activityData.sessionToken, activityData.tech);
+            } else {
+                return handleNdefDiscoveredMessages(activityData.records);
+            }
+            break;
+        case 'NFC_A':
+            debug('Not implemented');
+        case 'MIFARE_ULTRALIGHT':
+            debug('Not implemented');
+            break;
+  }
+  return false;
+}
+
 function NfcActivityHandler(activity) {
     var activityName = activity.source.name;
     var data = activity.source.data;
+
+    updateText(activityName);
 
     switch (activityName) {
         case 'nfc-ndef-discovered': // This is where we detect the data
             updateText('XX Received Activity: nfc ndef message(s): ' +
                 JSON.stringify(data.records));
             updateText('XX Received Activity: data: ' + JSON.stringify(data));
+            //nfcUI.setConnectedState(true);
+            // If there is a pending tag write, apply that write now.
+            //nfcUI.writePendingMessage();
+            handleNdefDiscovered(data);
             break;
         case 'nfc-tech-discovered':
             updateText('XX Received Activity: nfc technology message(s): ' +
