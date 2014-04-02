@@ -91,7 +91,7 @@ function send_file(peer) {
 }
 
 window.onload = function onload() {
-    navigator.mozSetMessageHandler('activity', NfcActivityHandler);
+    window.navigator.mozSetMessageHandler('activity', NfcActivityHandler);
 
     window.navigator.mozNfc.onpeerready = function(event) {
         var nfcdom = window.navigator.mozNfc;
