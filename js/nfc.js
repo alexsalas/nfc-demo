@@ -7,7 +7,7 @@ function NfcActivityHandler(activity) {
     var data = activity.source.data;
 
     switch (activityName) {
-        case 'nfc-ndef-discovered':
+        case 'nfc-ndef-discovered': // This is where we detect the data
             updateText('XX Received Activity: nfc ndef message(s): ' +
                 JSON.stringify(data.records));
             updateText('XX Received Activity: data: ' + JSON.stringify(data));
@@ -35,12 +35,12 @@ function send_file(peer) {
     var records = new Array();
 
     var appStorage = navigator.getDeviceStorage('apps');
-    file1 = appStorage.get("local/webapps/webapps.json");
-    var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
+    //file1 = appStorage.get("local/webapps/webapps.json");
+    //var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
 
     var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
     records.push(ndef);
-    records.push(file);
+    //records.push(file);
 
     var req = nfcPeer.sendNDEF(records);
     req.onsuccess = (function() {
@@ -60,6 +60,24 @@ window.onload = function onload() {
 
         updateText('New Device Found!');
 
-        send_file(nfcPeer);
+        //send_file(nfcPeer);
+
+        var records = new Array();
+
+        var appStorage = navigator.getDeviceStorage('apps');
+        //file1 = appStorage.get("local/webapps/webapps.json");
+        //var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
+
+        var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
+        records.push(ndef);
+        //records.push(file);
+
+        var req = nfcPeer.sendNDEF(records);
+        req.onsuccess = (function() {
+            updateText('Sent file successfully');
+        });
+        req.onerror = (function() {
+            updateText('Unable to send file');
+        });
     };
 }
