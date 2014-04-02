@@ -1,33 +1,64 @@
-/**
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+function NfcActivityHandler(activity) {
+    var activityName = activity.source.name;
+    var data = activity.source.data;
 
-/* Copyright © 2013, Deutsche Telekom, Inc. */
-
-
-'use strict';
-
-function includeJS(elementContainer) {
-
-  var scripts = new Array(
-    'js/nfc_consts.js',
-    'js/records/nfc_text.js',
-    'js/records/nfc_uri.js',
-    'js/records/nfc_sms.js',
-    'js/records/nfc_smartposter.js',
-    'js/nfc_writer.js',
-    'js/nfc_ui.js',
-    'js/nfc_main.js'
-  );
-  for (var i = 0; i < scripts.length; i++) {
-    var element = document.createElement('script');
-    element.type = 'text/javascript';
-    element.src = scripts[i];
-    elementContainer.appendChild(element);
-  }
+    switch (activityName) {
+        case 'nfc-ndef-discovered':
+            debug('XX Received Activity: nfc ndef message(s): ' +
+                JSON.stringify(data.records));
+            debug('XX Received Activity: data: ' + JSON.stringify(data));
+            nfcUI.setConnectedState(true);
+            // If there is a pending tag write, apply that write now.
+            nfcUI.writePendingMessage();
+            handleNdefDiscovered(data);
+            break;
+        case 'nfc-tech-discovered':
+            debug('XX Received Activity: nfc technology message(s): ' +
+                JSON.stringify(data.records));
+            nfcUI.setConnectedState(true);
+            // If there is a pending tag write, apply that write now.
+            nfcUI.writePendingMessage();
+            handleTechnologyDiscovered(data);
+            break;
+        case 'nfc-tag-discovered':
+            debug('XX Received Activity: nfc tag message(s): ' +
+                JSON.stringify(data.records));
+            nfcUI.setConnectedState(true);
+            // If there is a pending tag write, apply that write now.
+            nfcUI.writePendingMessage();
+            handleTagDiscoveredMessages(data);
+            break;
+        case 'nfc-tech-lost':
+            debug('XX Received Activity: nfc-tech-lost: ' +
+                JSON.stringify(data));
+            nfcUI.setConnectedState(false);
+            break;
+        case 'ndefpush-receive':
+            debug('XX Received Activity: ndefpush-receive: ' +
+                JSON.stringify(data));
+            nfcUI.setConnectedState(true);
+            break;
+    }
 }
 
-// Include scripts at head:
-includeJS(document.getElementsByTagName('head')[0]);
+window.onload = function onload() {
+  window.navigator.mozSetMessageHandler('activity', NfcActivityHandler);
+
+  window.navigator.mozNfc.onpeerready = function(event) {
+    var nfcdom = window.navigator.mozNfc;
+    var nfcPeer = nfcdom.getNFCPeer(event.detail);
+
+    var new_devices = $('#new_devices');
+    new_devices.append('<p>New Device Found!</p>');
+    // var records = new Array();
+    // var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
+    // records.push(ndef);
+    // var req = nfcPeer.sendNDEF(records);
+    // req.onsuccess = (function() {
+    //   debug('SEND NDEF successfully');
+    // });
+    // req.onerror = (function() {
+    //   debug('SEND NDEF FAILED');
+    // });
+  };
+}
