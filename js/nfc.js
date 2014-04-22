@@ -1,113 +1,34 @@
-function updateText(text) {
-    $('#new_devices').append('<p>' + text + '</p>');
-}
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
-function handleNdefDiscovered(activityData) {
-    var nfcdom = window.navigator.mozNfc;
-    var nfcTag = nfcdom.getNFCTag(activityData.sessionToken);
-    nfcUI.nfcTag = nfcTag;
-    if (!nfcTag) {
-        updateText('Error: handleNdefDiscovered: can\'t get NFC Tag' +
-            ' session for operations.');
-        return false;
-    }
+/* Copyright © 2013, Deutsche Telekom, Inc. */
 
-    switch (activityData.tech) {
-        case 'P2P':
-            // Process existing message.
-            return handleNdefDiscoveredMessages(activityData.records);
-            break;
-        case 'NDEF':
-            // Fall through
-        case 'NDEF_FORMATTABLE':
-            if (activityData.records === null) {
-                // Process unread message.
-                return handleNdefType(activityData.sessionToken,
-                    activityData.tech);
-            } else {
-                return handleNdefDiscoveredMessages(activityData.records);
-            }
-            break;
-        case 'NFC_A':
-            debug('Not implemented');
-        case 'MIFARE_ULTRALIGHT':
-            debug('Not implemented');
-            break;
+
+'use strict';
+
+function includeJS(elementContainer) {
+
+  var scripts = new Array(
+//    'js/nfc_consts.js',
+//    'js/records/nfc_text.js',
+//    'js/records/nfc_uri.js',
+//    'js/records/nfc_sms.js',
+//    'js/records/nfc_smartposter.js',
+//    'js/nfc_writer.js',
+//    'js/nfc_ui.js',
+//    'js/nfc_main.js'
+    'js/fxos.js'
+  );
+  for (var i = 0; i < scripts.length; i++) {
+    var element = document.createElement('script');
+    element.type = 'text/javascript';
+    element.src = scripts[i];
+    elementContainer.appendChild(element);
   }
-  return false;
 }
 
-function NfcActivityHandler(activity) {
-    var activityName = activity.source.name;
-    var data = activity.source.data;
-
-    console.log('XX Received Activity: name: ' + activityName);
-    updateText(activityName);
-
-    switch (activityName) {
-        case 'nfc-ndef-discovered': // This is where we detect the data
-            console.log('XX Received Activity: ndef: ' +
-                JSON.stringify(data.records));
-            updateText('XX Received Activity: ndef: ' +
-                JSON.stringify(data.records));
-            updateText('XX Received Activity: data: ' + JSON.stringify(data));
-            handleNdefDiscovered(data);
-            break;
-        case 'nfc-tech-discovered':
-            console.log('XX Received Activity: nfc technology message(s): ' +
-                JSON.stringify(data.records));
-
-            updateText('XX Received Activity: nfc technology message(s): ' +
-                JSON.stringify(data.records));
-            break;
-        case 'nfc-tag-discovered':
-            console.log('XX Received Activity: nfc tag message(s): ' +
-                JSON.stringify(data.records));
-            updateText('XX Received Activity: nfc tag message(s): ' +
-                JSON.stringify(data.records));
-            break;
-        case 'nfc-tech-lost':
-            updateText('XX Received Activity: nfc-tech-lost: ' +
-                JSON.stringify(data));
-            break;
-        case 'ndefpush-receive':
-            updateText('XX Received Activity: ndefpush-receive: ' +
-                JSON.stringify(data));
-            break;
-    }
-}
-
-function send_file(peer) {
-    var records = new Array();
-
-    var appStorage = navigator.getDeviceStorage('apps');
-    file1 = appStorage.get('local/webapps/webapps.json');
-    var file = appStorage.get(
-        'local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip');
-
-    var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
-    records.push(ndef);
-    records.push(file);
-
-    var req = nfcPeer.sendNDEF(records);
-    req.onsuccess = (function() {
-        updateText('Sent file successfully');
-    });
-    req.onerror = (function() {
-        updateText('Unable to send file');
-    });
-}
-
-window.onload = function() {
-    navigator.mozSetMessageHandler('activity', NfcActivityHandler);
-
-    window.navigator.mozNfc.onpeerready = function(event) {
-        console.log('In onpeerready handler' + JSON.stringify(event.detail));
-        updateText('New Device Found!');
-
-        var nfcdom = window.navigator.mozNfc;
-        var nfcPeer = nfcdom.getNFCPeer(event.detail);
-
-        send_file(nfcPeer);
-    };
-};
+// Include scripts at head:
+includeJS(document.getElementsByTagName('head')[0]);
