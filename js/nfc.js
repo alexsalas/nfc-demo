@@ -7,7 +7,8 @@ function handleNdefDiscovered(activityData) {
     var nfcTag = nfcdom.getNFCTag(activityData.sessionToken);
     nfcUI.nfcTag = nfcTag;
     if (!nfcTag) {
-        updateText("Error: handleNdefDiscovered: can't get NFC Tag session for operations.");
+        updateText('Error: handleNdefDiscovered: can\'t get NFC Tag' +
+            ' session for operations.');
         return false;
     }
 
@@ -21,7 +22,8 @@ function handleNdefDiscovered(activityData) {
         case 'NDEF_FORMATTABLE':
             if (activityData.records === null) {
                 // Process unread message.
-                return handleNdefType(activityData.sessionToken, activityData.tech);
+                return handleNdefType(activityData.sessionToken,
+                    activityData.tech);
             } else {
                 return handleNdefDiscoveredMessages(activityData.records);
             }
@@ -39,23 +41,28 @@ function NfcActivityHandler(activity) {
     var activityName = activity.source.name;
     var data = activity.source.data;
 
+    console.log('XX Received Activity: name: ' + activityName);
     updateText(activityName);
 
     switch (activityName) {
         case 'nfc-ndef-discovered': // This is where we detect the data
-            updateText('XX Received Activity: nfc ndef message(s): ' +
+            console.log('XX Received Activity: ndef: ' +
+                JSON.stringify(data.records));
+            updateText('XX Received Activity: ndef: ' +
                 JSON.stringify(data.records));
             updateText('XX Received Activity: data: ' + JSON.stringify(data));
-            //nfcUI.setConnectedState(true);
-            // If there is a pending tag write, apply that write now.
-            //nfcUI.writePendingMessage();
             handleNdefDiscovered(data);
             break;
         case 'nfc-tech-discovered':
+            console.log('XX Received Activity: nfc technology message(s): ' +
+                JSON.stringify(data.records));
+
             updateText('XX Received Activity: nfc technology message(s): ' +
                 JSON.stringify(data.records));
             break;
         case 'nfc-tag-discovered':
+            console.log('XX Received Activity: nfc tag message(s): ' +
+                JSON.stringify(data.records));
             updateText('XX Received Activity: nfc tag message(s): ' +
                 JSON.stringify(data.records));
             break;
@@ -74,8 +81,9 @@ function send_file(peer) {
     var records = new Array();
 
     var appStorage = navigator.getDeviceStorage('apps');
-    file1 = appStorage.get("local/webapps/webapps.json");
-    var file = appStorage.get("local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip");
+    file1 = appStorage.get('local/webapps/webapps.json');
+    var file = appStorage.get(
+        'local/webapps/{6283d35f-e5ca-462c-a7d6-eed7eef7c343}/application.zip');
 
     var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
     records.push(ndef);
@@ -90,13 +98,16 @@ function send_file(peer) {
     });
 }
 
-window.navigator.mozSetMessageHandler('activity', NfcActivityHandler);
+window.onload = function() {
+    navigator.mozSetMessageHandler('activity', NfcActivityHandler);
 
-window.navigator.mozNfc.onpeerready = function(event) {
-    updateText('New Device Found!');
+    window.navigator.mozNfc.onpeerready = function(event) {
+        console.log('In onpeerready handler' + JSON.stringify(event.detail));
+        updateText('New Device Found!');
 
-    var nfcdom = window.navigator.mozNfc;
-    var nfcPeer = nfcdom.getNFCPeer(event.detail);
+        var nfcdom = window.navigator.mozNfc;
+        var nfcPeer = nfcdom.getNFCPeer(event.detail);
 
-    send_file(nfcPeer);
+        send_file(nfcPeer);
+    };
 };
