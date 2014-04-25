@@ -63,6 +63,20 @@ function open_transfer_prompt() {
 // Page 11, Figure 2, (1)
 // Relevant API: DeviceStorage
 function remaining_device_storage() {
+	var apps = navigator.getDeviceStorage("apps");
+
+	var request = apps.freeSpace();
+
+	request.onsuccess = function () {
+  		// The result is expressed in bytes, let's turn it into Gigabytes
+  		var size = this.result / Math.pow(10,9);
+
+  		console.log("You have " + size.toFixed(2) + "GB of free space for apps.");
+	}
+
+	request.onerror = function () {
+  		console.warn("Unable to get the free space available for the SDCard: " + this.error);
+	}
 }
 
 // Page 11, Figure 2, (2)
