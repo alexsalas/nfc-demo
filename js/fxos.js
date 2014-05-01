@@ -23,6 +23,24 @@ function nfc_email_package() {
 // XXX: NFC hides the tech-discovery notification on the topmost WebNFC
 //		so this only lists previously paired bluetooth devices
 function paired_device_list() {
+	var adapter;
+	var btreq = bluetooth.getDefaultAdapter();
+	btreq.onsuccess = function() {
+		adapter = this.result;
+		var pairedreq = adapter.getPairedDevices();
+		pairedreq.onsuccess = function () {
+			return this.result;
+		}
+		pairedreq.onerror = function () {
+			console.warn(pairedreq.error.name);
+			console.warn('Getting paired devices failed.');
+		}
+	}
+
+	btreq.onerror = function() {
+		console.warn(btreq.error.name);
+		console.warn('Getting adapter failed.');
+	}
 }
 
 // Page 6, Figure 5, (2)
