@@ -71,7 +71,7 @@ function remaining_device_storage() {
   		// The result is expressed in bytes, let's turn it into Gigabytes
   		var size = this.result / Math.pow(10,9);
 
-  		console.log("You have " + size.toFixed(2) + "GB of free space for apps.");
+  		console.log("You have " + size.toFixed(2) + " GB of free space for apps.");
 	}
 
 	request.onerror = function () {
@@ -82,6 +82,7 @@ function remaining_device_storage() {
 // Page 11, Figure 2, (2)
 // Relevant API: DeviceStorage
 function application_size() {
+
 }
 
 // Page 11, Figure 2, (3)
