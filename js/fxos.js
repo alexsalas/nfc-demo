@@ -45,12 +45,16 @@ function nfc_active() {
 		settings.createLock().set({'nfc.enabled': true});
 	}
 
-	console.log(settings.createLock().get('nfc.enabled'));
-	console.log(settings.createLock().get('bluetooth.enabled'));
 	// Have a way to turn on BT
 	if (!('mozBluetooth' in window.navigator)) {
 		console.log('FXOS: Bluetooth disabled');
 		settings.createLock().set({'bluetooth.enabled': true});
+	}
+
+	// Settings API works via callbacks. Make synchronous?
+	var req = settings.createLock().get('bluetooth.enabled');
+	req.onsuccess = function() {
+		console.log('bluetooth.enabled' + req['bluetooth.enabled']);
 	}
 
 
