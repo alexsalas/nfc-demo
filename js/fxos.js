@@ -1,14 +1,85 @@
 // Methods that the front-end team needs
+// Bug 949293
+console.log('FXOS: API Loaded');
+
+// Helper to update UI
+function updateText(text) {
+    $('#new_devices').append('<p>' + text + '</p>');
+}
+
+// Handles all incoming nfc activities
+function nfc_activity_handler(activity) {
+	var activity_name = activity.source.name;
+	var data = activity.source.data;
+
+	switch (activityName) {
+		case 'nfc-ndef-discovered':
+			console.log('FXOS: nfc ndef message records: ' +
+					JSON.stringify(data.records));
+			console.log('FXOS: Session Token: ' + JSON.stringify(data.sessionToken));
+			console.log('FXOS: Technology Detected: ' + JSON.stringify(data.tech));
+
+			// XXX: Handle NDEFs a little later
+			//handle_ndef_discovered(data);
+			break;
+	}
+}
 
 // Page 5, Figure 4 (1st one)
 // Relevant API: WebNfc
 // A way to toggle NFC into 'active' mode upon tapping 'NFC + Bluetooth'
 // We can just set the appropriate handler when we need it
 function nfc_active() {
+	console.log('FXOS: Activating NFC');
+
+	// Access the settings API
+	var settings = window.navigator.mozSettings;
+	if (!settings) {
+		console.log('FXOS: Cannot access settings');
+		return;
+	}
+
+	// Have a way to turn on NFC
+	if (!('mozNfc' in window.navigator)) {
+		console.log('FXOS: NFC disabled');
+		settings.createLock().set({'nfc.enabled': true});
+	}
+
+	console.log(settings.createLock().get('nfc.enabled'));
+	console.log(settings.createLock().get('bluetooth.enabled'));
+	// Have a way to turn on BT
+	if (!('mozBluetooth' in window.navigator)) {
+		console.log('FXOS: Bluetooth disabled');
+		settings.createLock().set({'bluetooth.enabled': true});
+	}
+
+
+	// Handler for receiving
+	navigator.mozSetMessageHandler('activity', nfc_activity_handler);
+
+	// Handler for sending
 	window.navigator.mozNfc.onpeerready = function(event) {
-		/* When the phones are brought together, this handler will fire */
+		/* Bug 1003268 - have no way of knowing when the phones touch */
+		/* Bug 998175 - simultaneous BT transfers are not possible */
+		/* This handler fires when the user swipes up on the NFC interaction */
+		var nfcPeer = window.navigator.mozNfc.getNFCPeer(event.detail);
+		var records = new Array();
+
+		var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
+		records.push(ndef);
+
+		// Bug 1002391 - bluetooth error for sending file, not NFC (blocker)
+		// I think we need to use send_file
+		var req = nfcPeer.sendNDEF(records);
+		req.onsuccess = (function() {
+			updateText('Sent file successfully');
+		});
+		req.onerror = (function() {
+			updateText('Unable to send file');
+		});
 	}
 }
+nfc_active();
 
 // Page 5, Figure 4 (2nd one)
 // Relevant API: DeviceStorage
