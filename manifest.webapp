@@ -5,7 +5,8 @@
   "type": "certified",
   "permissions": {
     "nfc":{ "access": "readwrite" },
-    "settings":{ "access": "readwrite" }
+    "settings":{ "access": "readwrite" },
+    "device-storage:apps": { "access": "readwrite" }
   },
   "developer": {
     "name": "Deutsche Telekom",
