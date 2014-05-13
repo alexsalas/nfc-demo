@@ -98,9 +98,10 @@ function send_file(peer) {
     });
 }
 
-window.onload = function() {
-    navigator.mozSetMessageHandler('activity', NfcActivityHandler);
+// Separate the message handler from the onload function
+navigator.mozSetMessageHandler('activity', NfcActivityHandler);
 
+window.onload = function() {
     window.navigator.mozNfc.onpeerready = function(event) {
         console.log('In onpeerready handler' + JSON.stringify(event.detail));
         updateText('New Device Found!');
