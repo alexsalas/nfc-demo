@@ -93,22 +93,51 @@ nfc_active();
 function nfc_email_package() {
 }
 
-// Page 6, Figure 5, (1)
-// Relevant API: Bluetooth
-// XXX: NFC hides the tech-discovery notification on the topmost WebNFC
-//		so this only lists previously paired bluetooth devices
-function paired_device_list() {
+// Page 6, Figure 5
+function getAppFile(filename, callback) {
+    var apps = window.navigator.getDeviceStorage('apps');
+    var req = apps.get(filename);
+    req.onsuccess = function() {
+        callback(req.result);
+    };
+    req.onerror = function() {
+        console.error('Failed to get app file', filename);
+    };
 }
 
-// Page 6, Figure 5, (2)
-// Relevant API: Bluetooth
-// XXX: Again this isn't relevant with NFC so if we do something like this, it
-//		would be through bluetooth
-function nearby_device_list() {
-}
+function BTSendApp(thisApp) {
+    var origin = thisApp.origin.split('app://')[1];
+    var manifestOrigin = thisApp.manifestURL.split('app://')[1];
 
-// Page 6, Figure 5, (3)
-function device_search() {
+    getAppFile('local/webapps/' + manifestOrigin, function(file) {
+        var blobs = [file];
+        var names = [file.name];
+        console.log('File "' + file.name + '" successfully retrieved from the app storage area');
+        getAppFile('local/webapps/' + origin + '/application.zip', function(file2) {
+            blobs.push(file2);
+            names.push(file2.name);
+            console.log('File "' + file2.name + '" successfully retrieved from the app storage area');
+
+            var a = new MozActivity({
+                name: 'share',
+                data: {
+                    number: blobs.length,
+                    blobs: blobs,
+                    filenames: names,
+                    filepaths: names
+                }
+            });
+            a.onsuccess = function() {
+                console.log("share activity success");
+            };
+
+            a.onerror = function(e) {
+                console.warn('share activity error:', a.error.name);
+                console.log(e);
+            };
+    });
+
+    });
 }
 
 // Page 6, Figure 6 (1st)
