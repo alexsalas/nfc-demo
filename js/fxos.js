@@ -30,6 +30,11 @@ function nfc_activity_handler(activity) {
 // Need to find an appropriate place to set this message handler
 window.navigator.mozSetMessageHandler('activity', nfc_activity_handler);
 
+// If the file is being transferred via bluetooth, then maybe we aren't getting
+// any nfc-ndef messages.
+// window.navigator.mozSetMessageHandler('bluetooth-opp-transfer-complete',
+//     null);
+
 // First make sure that NFC and Bluetooth are available and then
 // enable the appropriate settings
 function configure_settings(callback) {
