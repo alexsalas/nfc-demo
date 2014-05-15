@@ -1,9 +1,10 @@
 // Methods that the front-end team needs
 // Bug 949293
-console.log('FXOS: API Loaded');
+updateText('FXOS: API Loaded');
 
 // Helper to update UI
 function updateText(text) {
+    console.log(text);
     $('#new_devices').append('<p>' + text + '</p>');
 }
 
@@ -14,11 +15,11 @@ function nfc_activity_handler(activity) {
 
     switch (activityName) {
         case 'nfc-ndef-discovered':
-            console.log('FXOS: nfc ndef message records: ' +
+            updateText('FXOS: nfc ndef message records: ' +
                 JSON.stringify(data.records));
-            console.log('FXOS: Session Token: ' +
+            updateText('FXOS: Session Token: ' +
                 JSON.stringify(data.sessionToken));
-            console.log('FXOS: Technology Detected: ' +
+            updateText('FXOS: Technology Detected: ' +
                 JSON.stringify(data.tech));
 
             // XXX: Handle NDEFs a little later
@@ -26,66 +27,90 @@ function nfc_activity_handler(activity) {
             break;
         }
 }
+// Need to find an appropriate place to set this message handler
+window.navigator.mozSetMessageHandler('activity', nfc_activity_handler);
+
+// First make sure that NFC and Bluetooth are available and then
+// enable the appropriate settings
+function configure_settings(callback) {
+    if (!window.navigator.mozSettings)
+        return 'FXOS: Cannot access settings';
+
+    if (!window.navigator.mozNfc)
+        return 'FXOS: NFC capabilities not available';
+
+    if (!window.navigator.mozBluetooth)
+        return 'FXOS: Bluetooth capabilities not available';
+
+    callback();
+
+    // XXX: Using the settings API gives me strange ASYNC errors with nfcd
+    // var lock = window.navigator.mozSettings.createLock();
+    // var result = lock.set({
+    //     'nfc.enabled': true,
+    //     'bluetooth.enabled': true
+    // });
+    // result.onsuccess = function() {
+    //     updateText('FXOS: NFC and Bluetooth enabled');
+    //     callback();
+    // };
+
+    // result.onerror = function() {
+    //     return 'FXOS: Settings were not set correctly';
+    // };
+}
 
 // Page 5, Figure 4 (1st one)
 // Relevant API: WebNfc
-// A way to toggle NFC into 'active' mode upon tapping 'NFC + Bluetooth'
-// We can just set the appropriate handler when we need it
-function nfc_active() {
+// A way to toggle NFC into 'active' mode upon tapping 'NFC + Bluetooth' option
+function nfc_activate() {
     console.log('FXOS: Activating NFC');
 
     // Access the settings API
-    var settings = window.navigator.mozSettings;
-    if (!settings) {
-        console.log('FXOS: Cannot access settings');
-        return;
-    }
+    var setting_callback = function() {
+        updateText('FXOS: Properly Set NFC Peer Handler');
+        window.navigator.mozNfc.onpeerready = function(event) {
+            var nfcPeer = window.navigator.mozNfc.getNFCPeer(event.detail);
 
-    // Have a way to turn on NFC
-    if (!('mozNfc' in window.navigator)) {
-        console.log('FXOS: NFC disabled');
-        settings.createLock().set({'nfc.enabled': true});
-    }
+            // Using the mozApps API to grab the app
+            var app_req = window.navigator.mozApps.getSelf();
+            app_req.onsuccess = function() {
+                var app = app_req.result;
+                if (app) {
+                    updateText(app.manifest.name);
+                    updateText(app.origin);
+                    updateText(app.manifestURL);
 
-    // Have a way to turn on BT
-    if (!('mozBluetooth' in window.navigator)) {
-        console.log('FXOS: Bluetooth disabled');
-        settings.createLock().set({'bluetooth.enabled': true});
-    }
-
-    // Settings API works via callbacks. Make synchronous?
-    var req = settings.createLock().get('bluetooth.enabled');
-    req.onsuccess = function() {
-        console.log('bluetooth.enabled' + req['bluetooth.enabled']);
+                    for (x in window.navigator.mozApps.mgmt)
+                        updateText(x);
+                    // XXX: Need to apply Fabrice's patch for import export
+                    var blob_req = window.navigator.mozApps.mgmt.export(app)
+                    .then(function(blob) {
+                        updateText('FXOS: Sending Blob');
+                        var send = nfcPeer.sendFile(blob);
+                        send.onsuccess = function() {
+                            updateText('FXOS: Blob successfully transferred');
+                        };
+                        send.onerror = function() {
+                            updateText('FXOS: Blob not successfully ' +
+                                'transferred');
+                        };
+                    });
+                }
+            };
+            app_req.onerror = function() {
+                updateText('Error retrieving app information: ');
+            };
+        };
     };
 
-
-    // Handler for receiving
-    navigator.mozSetMessageHandler('activity', nfc_activity_handler);
-
-    // Handler for sending
-    window.navigator.mozNfc.onpeerready = function(event) {
-        /* Bug 1003268 - have no way of knowing when the phones touch */
-        /* Bug 998175 - simultaneous BT transfers are not possible */
-        /* This handler fires when the user swipes up on the NFC interaction */
-        var nfcPeer = window.navigator.mozNfc.getNFCPeer(event.detail);
-        var records = new Array();
-
-        var ndef = nfcText.createTextNdefRecord_Utf8('Dummy Text', 'en');
-        records.push(ndef);
-
-        // Bug 1002391 - bluetooth error for sending file, not NFC (blocker)
-        // I think we need to use send_file
-        var req = nfcPeer.sendNDEF(records);
-        req.onsuccess = (function() {
-            updateText('Sent file successfully');
-        });
-        req.onerror = (function() {
-            updateText('Unable to send file');
-        });
-    };
+    var error = configure_settings(setting_callback);
+    if (error)
+       updateText(error);
 }
-nfc_active();
+
+// Only using while testing. This should be called from the UI
+nfc_activate();
 
 // Page 5, Figure 4 (2nd one)
 // Relevant API: DeviceStorage
@@ -145,33 +170,50 @@ function BTSendApp(thisApp) {
     });
 }
 
+// developer.mozilla.org/en-US/docs/Web/API/Navigator.mozSetMessageHandler
+// XXX: There are several message types that can be used to implement
+// the following functions about the file transfer status
+
 // Page 6, Figure 6 (1st)
-function transfer_heartbeat() {
-}
+// function transfer_heartbeat() {
+// }
 
 // Page 6, Figure 6 (2nd)
-function transfer_complete() {
-}
+// function transfer_complete() {
+// }
 
 // Page 7, Figure 2
-function transfer_waiting() {
-}
+// function transfer_waiting() {
+// }
 
 // Page 9, Figure 2
-function transfer_interrupt() {
-}
+// function transfer_interrupt() {
+// }
 
 // Page 9, Figures 3 and 4
-function transfer_cancelled() {
-}
+// function transfer_cancelled() {
+// }
 
 // Page 11, Figure 1
-function open_transfer_prompt() {
-}
+// function open_transfer_prompt() {
+// }
 
 // Page 11, Figure 2, (1)
 // Relevant API: DeviceStorage
 function remaining_device_storage() {
+    var apps = navigator.getDeviceStorage('apps');
+
+    var request = apps.freeSpace();
+    request.onsuccess = function() {
+        // The result is expressed in bytes, let's turn it into Gigabytes
+        var size = this.result / Math.pow(10, 9);
+        updateText('You have ' + size.toFixed(2) +
+            ' GB of free space for apps.');
+    };
+    request.onerror = function() {
+        updateText('Unable to get the free space available for the SDCard: ' +
+        this.error);
+    };
 }
 
 // Page 11, Figure 2, (2)
@@ -183,5 +225,5 @@ function application_size() {
 // Page 14, Figure 2
 // XXX: Might have to look in Bluetooth and DeviceStorage
 //      Also show the amount that's been downloaded so far
-function transfer_complete_percentage() {
-}
+// function transfer_complete_percentage() {
+// }

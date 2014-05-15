@@ -5,6 +5,8 @@
   "type": "certified",
   "permissions": {
     "nfc":{ "access": "readwrite" },
+    "bluetooth":{},
+    "webapps-manage":{},
     "settings":{ "access": "readwrite" },
     "device-storage:apps": { "access": "readwrite" }
   },
